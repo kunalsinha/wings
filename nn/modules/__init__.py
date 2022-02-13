@@ -1,5 +1,5 @@
 from .module import Module
 from .linear import Linear
-from .loss import MSE, Softmax
-from .activation import ReLU
+from .loss import MSELoss, BCELoss, BCEWithLogitsLoss
+from .activation import ReLU, Sigmoid
 from .sequential import Sequential

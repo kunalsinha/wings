@@ -26,8 +26,40 @@ class ReLU(Module):
         dout[self.X <=0] = 0
         return dout
 
-    def __call__(self, X):
-        return self.forward(X)
-
     def __repr__(self):
         return f"ReLU()"
+
+
+class Sigmoid(Module):
+    """
+    Implements a sigmoid activation function.
+    """
+
+    def __init__(self):
+        super().__init__()
+
+    def _sigmoid(self):
+        return np.where(self.X >=0, 
+                (1 / (1 + np.exp(-self.X))),
+                (np.exp(self.X) / (1 + np.exp(self.X))))
+
+    def _sigmoid_derivative(self):
+        der = self._sigmoid()
+        return der * (1 - der)
+
+    def forward(self, X):
+        """
+        Apply sigmoid activation 1 / (1 + e^(-x))
+        """
+        self.X = X
+        return self._sigmoid()
+
+    def backward(self, dout):
+        """
+        Backprop through sigmoid activation.
+        """
+        return self._sigmoid_derivative() * dout
+
+    def __repr__(self):
+        return f"Sigmoid()"
+
