@@ -107,13 +107,10 @@ class BCEWithLogitsLoss(BCELoss):
         self.N = len(self.prediction)
         if not self._is_valid_args():
             raise ValueError("Mismatched sizes for prediction and target")
-        loss = self._bce_loss()
-        return loss / self.N
+        return self._bce_loss() / self.N
 
     def backward(self):
         """
         Backpropagate through the binary cross entropy and logit functions.
         """
-        dyhat = self._bce_backprop()
-        dz = dyhat * self.prediction * (1 - self.prediction)
-        return dz / self.N
+        return (self.prediction - self.target) / self.N
