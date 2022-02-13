@@ -1,4 +1,5 @@
 from .module import Module
+from .functional import sigmoid, sigmoid_derivative
 import numpy as np
 
 class ReLU(Module):
@@ -38,27 +39,19 @@ class Sigmoid(Module):
     def __init__(self):
         super().__init__()
 
-    def _sigmoid(self):
-        return np.where(self.X >=0, 
-                (1 / (1 + np.exp(-self.X))),
-                (np.exp(self.X) / (1 + np.exp(self.X))))
-
-    def _sigmoid_derivative(self):
-        der = self._sigmoid()
-        return der * (1 - der)
-
     def forward(self, X):
         """
         Apply sigmoid activation 1 / (1 + e^(-x))
         """
         self.X = X
-        return self._sigmoid()
+        self.X_sigmoid = sigmoid(self.X)
+        return self.X_sigmoid
 
     def backward(self, dout):
         """
         Backprop through sigmoid activation.
         """
-        return self._sigmoid_derivative() * dout
+        return self.X_sigmoid * (1 - self.X_sigmoid) * dout
 
     def __repr__(self):
         return f"Sigmoid()"
