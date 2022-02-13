@@ -1,4 +1,5 @@
 from .module import Module
+from .functional import sigmoid, sigmoid_derivative
 import numpy as np
 
 class Loss:
@@ -87,15 +88,15 @@ class BCELoss(Loss):
         #print(self.target)
         if not self._is_valid_args():
             raise ValueError("Mismatched sizes for prediction and target")
-        loss = - np.sum((self.target * np.log(self.prediction + self.eps) + 
+        loss = np.sum(-(self.target * np.log(self.prediction + self.eps) + 
                  (1 - self.target) * np.log(1 - self.prediction + self.eps)))
         if self.reduction == "mean":
             loss /= self.N
         return loss
 
     def backward(self):
-        grad = np.sum(np.log(1 - self.prediction + self.eps) - 
-                np.log(self.prediction + self.eps))
+        grad = ((1 - self.target) / (1 - self.prediction + self.eps)) - \
+                (self.target / self.prediction + self.eps)
         if self.reduction == "mean":
             grad /= self.N
         return grad
@@ -109,11 +110,6 @@ class BCEWithLogitsLoss(Loss):
         super().__init__()
         self.eps = 1e-8
 
-    def _sigmoid(self):
-        return np.where(self.X >= 0, 
-                1 / (1 + np.exp(-self.X)),
-                np.exp(self.X) / (1 + np.exp(self.X)))
-
     def _bce_loss(self):
         return np.sum(-(self.target * np.log(self.prediction + self.eps) +
             (1 - self.target) * np.log(1 - self.prediction + self.eps)))
@@ -124,7 +120,7 @@ class BCEWithLogitsLoss(Loss):
         """
         self.X = X
         self.target = target
-        self.prediction = self._sigmoid()
+        self.prediction = sigmoid(self.X)
         return self._bce_loss()
 
     def backward(self):
