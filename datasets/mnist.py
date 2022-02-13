@@ -37,7 +37,6 @@ class MNIST(Dataset):
         digits_labels = []
         if not self.digits:
             self.digits = list(range(10))
-        print(self.digits)
         for digit in self.digits:
             digit_path = os.path.join(self.path, str(digit))
             mini_data, mini_labels = self._read_digits(digit, digit_path)
