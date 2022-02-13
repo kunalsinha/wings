@@ -61,6 +61,14 @@ class BCELoss(Loss):
         super().__init__()
         self.eps = 1e-8
 
+    def _bce_loss(self):
+        return np.sum(-(self.target * np.log(self.prediction + self.eps) +
+            (1 - self.target) * np.log(1 - self.prediction + self.eps)))
+
+    def _bce_backprop(self):
+        return (((1 - self.target) / (1 - self.prediction + self.eps)) - \
+                (self.target / self.prediction + self.eps))
+
     def forward(self, prediction, target):
         """
         Forward propagation to compute the binary cross entropy loss
@@ -71,16 +79,14 @@ class BCELoss(Loss):
         self.target = target
         if not self._is_valid_args():
             raise ValueError("Mismatched sizes for prediction and target")
-        loss = np.sum(-(self.target * np.log(self.prediction + self.eps) + 
-                 (1 - self.target) * np.log(1 - self.prediction + self.eps)))
+        loss = self._bce_loss()
         return loss / self.N
 
     def backward(self):
-        grad = ((1 - self.target) / (1 - self.prediction + self.eps)) - \
-                (self.target / self.prediction + self.eps)
+        grad = self._bce_backprop()
         return grad / self.N
 
-class BCEWithLogitsLoss(Loss):
+class BCEWithLogitsLoss(BCELoss):
     """
     Implements a logits computation along with binary cross entropy loss.
     """
@@ -89,9 +95,6 @@ class BCEWithLogitsLoss(Loss):
         super().__init__()
         self.eps = 1e-8
 
-    def _bce_loss(self):
-        return np.sum(-(self.target * np.log(self.prediction + self.eps) +
-            (1 - self.target) * np.log(1 - self.prediction + self.eps)))
 
     def forward(self, X, target):
         """
@@ -111,7 +114,6 @@ class BCEWithLogitsLoss(Loss):
         """
         Backpropagate through the binary cross entropy and logit functions.
         """
-        dyhat = ((1 - self.target) / (1 - self.prediction + self.eps)) - \
-                (self.target / self.prediction + self.eps)
+        dyhat = self._bce_backprop()
         dz = dyhat * self.prediction * (1 - self.prediction)
         return dz / self.N
