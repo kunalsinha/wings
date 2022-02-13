@@ -9,10 +9,19 @@ class MNIST(Dataset):
     Loads the MNIST dataset
     """
 
-    def __init__(self, root, train=True):
+    def __init__(self, root, train=True, digits=None):
+        """
+        Read the MNIST images from the given path.
+
+        Args:
+            root (str): path to the MNIST dataset.
+            train (bool): switch to load train or test data.
+            digits (list): list of digits to be read. None implies all.
+        """
         super().__init__()
         self.root = root
         self.train = train
+        self.digits = digits
         # set path to train/test data
         self.path = self._build_path()
         return self._load_data()
@@ -26,7 +35,10 @@ class MNIST(Dataset):
     def _load_data(self):
         digits_features = []
         digits_labels = []
-        for digit in range(10):
+        if not self.digits:
+            self.digits = list(range(10))
+        print(self.digits)
+        for digit in self.digits:
             digit_path = os.path.join(self.path, str(digit))
             mini_data, mini_labels = self._read_digits(digit, digit_path)
             digits_features += mini_data
