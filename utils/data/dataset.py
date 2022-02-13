@@ -10,8 +10,8 @@ class Dataset:
     def dataset(self):
         return (self.data, self.labels)
 
-    def data(self):
+    def get_data(self):
         return self.data
 
-    def labels(self):
+    def get_labels(self):
         return self.labels
