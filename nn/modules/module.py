@@ -39,6 +39,8 @@ class Module:
             raise ValueError("Invalid mode argument")
         # set mode for all child modules
         for module in self._modules.values():
+            if type(module) == wings.nn.Sequential:
+                module.set_mode(mode)
             module._mode = mode
         # set self mode
         self._mode = mode
