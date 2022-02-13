@@ -25,13 +25,8 @@ class MSELoss(Loss):
     Implements a mean squared loss function.
     """
 
-    def __init__(self, reduction='mean'):
-        """
-        Args:
-            reduction (str): "mean", "sum"
-        """
+    def __init__(self):
         super().__init__()
-        self.reduction = reduction
 
     def forward(self, prediction, target):
         """
@@ -48,32 +43,22 @@ class MSELoss(Loss):
         if not self._is_valid_args():
             raise ValueError("Mismatched sizes for prediction and target")
         loss =  np.sum((prediction - target) ** 2)
-        if self.reduction == "mean":
-            loss *= (0.5 / self.N)
-        return loss
+        return loss * (0.5 / self.N)
 
     def backward(self):
         """
         Backprop to calculate the gradients.
         """
         grad = 2 * (self.prediction - self.target)
-        if self.reduction == "mean":
-            grad *= (0.5 / self.N)
-        return grad
-
+        return grad * (0.5 / self.N)
 
 class BCELoss(Loss):
     """
     Implements a binary cross entropy loss function.
     """
 
-    def __init__(self, reduction="mean"):
-        """
-        Args:
-            reduction (str): "mean", "sum"
-        """
+    def __init__(self):
         super().__init__()
-        self.reduction = reduction
         self.eps = 1e-8
 
     def forward(self, prediction, target):
@@ -88,16 +73,12 @@ class BCELoss(Loss):
             raise ValueError("Mismatched sizes for prediction and target")
         loss = np.sum(-(self.target * np.log(self.prediction + self.eps) + 
                  (1 - self.target) * np.log(1 - self.prediction + self.eps)))
-        if self.reduction == "mean":
-            loss /= self.N
-        return loss
+        return loss / self.N
 
     def backward(self):
         grad = ((1 - self.target) / (1 - self.prediction + self.eps)) - \
                 (self.target / self.prediction + self.eps)
-        if self.reduction == "mean":
-            grad /= self.N
-        return grad
+        return grad / self.N
 
 class BCEWithLogitsLoss(Loss):
     """
@@ -114,15 +95,23 @@ class BCEWithLogitsLoss(Loss):
 
     def forward(self, X, target):
         """
-        Compute logits and then the loss for the given input.
+        Forward propagation to compute logits and then the loss for the 
+        given input.
         """
         self.X = X
         self.target = target
         self.prediction = sigmoid(self.X)
-        return self._bce_loss()
+        self.N = len(self.prediction)
+        if not self._is_valid_args():
+            raise ValueError("Mismatched sizes for prediction and target")
+        loss = self._bce_loss()
+        return loss / self.N
 
     def backward(self):
+        """
+        Backpropagate through the binary cross entropy and logit functions.
+        """
         dyhat = ((1 - self.target) / (1 - self.prediction + self.eps)) - \
                 (self.target / self.prediction + self.eps)
         dz = dyhat * self.prediction * (1 - self.prediction)
-        return dz
+        return dz / self.N
