@@ -42,15 +42,13 @@ class MSELoss(Loss):
         self.target = target
         if not self._is_valid_args():
             raise ValueError("Mismatched sizes for prediction and target")
-        loss =  np.sum((prediction - target) ** 2)
-        return loss * (0.5 / self.N)
+        return np.sum((prediction - target) ** 2) / (2 * self.N)
 
     def backward(self):
         """
         Backprop to calculate the gradients.
         """
-        grad = 2 * (self.prediction - self.target)
-        return grad * (0.5 / self.N)
+        return (self.prediction - self.target) / self.N
 
 class BCELoss(Loss):
     """
@@ -79,12 +77,10 @@ class BCELoss(Loss):
         self.target = target
         if not self._is_valid_args():
             raise ValueError("Mismatched sizes for prediction and target")
-        loss = self._bce_loss()
-        return loss / self.N
+        return self._bce_loss() / self.N
 
     def backward(self):
-        grad = self._bce_backprop()
-        return grad / self.N
+        return self._bce_backprop() / self.N
 
 class BCEWithLogitsLoss(BCELoss):
     """
