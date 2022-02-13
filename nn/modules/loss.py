@@ -84,8 +84,6 @@ class BCELoss(Loss):
         self.N = len(prediction)
         self.prediction = prediction
         self.target = target
-        #print(self.prediction)
-        #print(self.target)
         if not self._is_valid_args():
             raise ValueError("Mismatched sizes for prediction and target")
         loss = np.sum(-(self.target * np.log(self.prediction + self.eps) + 
