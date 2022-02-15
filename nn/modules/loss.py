@@ -11,6 +11,7 @@ class Loss:
         self.N = None
         self.prediction = None
         self.target = None
+        self.eps = 1e-8
 
     def _is_valid_args(self):
         pred_len = len(self.prediction)
@@ -59,7 +60,6 @@ class BCELoss(Loss):
 
     def __init__(self):
         super().__init__()
-        self.eps = 1e-8
 
     def _bce_loss(self):
         """
@@ -104,8 +104,6 @@ class BCEWithLogitsLoss(BCELoss):
 
     def __init__(self):
         super().__init__()
-        self.eps = 1e-8
-
 
     def forward(self, X, target):
         """
@@ -141,7 +139,6 @@ class CrossEntropyLoss(Loss):
 
     def __init__(self):
         super().__init__()
-        self.eps = 1e-8
 
     def _softmax(self):
         """
@@ -201,7 +198,6 @@ class NLLLoss(Loss):
 
     def __init__(self):
         super().__init__()
-        self.eps = 1e-8
 
     def _one_hot_encoded_target(self):
         """
