@@ -160,7 +160,7 @@ class CrossEntropyLoss(Loss):
         Args:
             X: matrix of shape (N, K) where N is the number of examples and 
                 K is the number of classes.
-            Y: matrix of target labels of shape (N) or (N, K).
+            Y: matrix of target labels of shape (N) or (N, 1) or (N, K).
         """
         self.X = X
         self.Y = Y
@@ -168,7 +168,10 @@ class CrossEntropyLoss(Loss):
         if not self._is_valid_args(self.X, self.Y):
             raise ValueError("Mismatched sizes for prediction and target")
         if len(self.Y.shape) > 1:
-            self.Y = np.argmax(self.Y, axis=1)
+            if self.Y.shape[1] == 1:
+                self.Y = self.Y.ravel()
+            else:
+                self.Y = np.argmax(self.Y, axis=1)
         # calculate class probabilities for every example
         self.probs = self._softmax()
         # add eps for numerical stability when computing log
@@ -210,7 +213,7 @@ class NLLLoss(Loss):
 
         Args:
             X: prediction probability matrix of shape (N, K)
-            Y: target label matrix of shape (N) or (N, K)
+            Y: target label matrix of shape (N) or (N, 1) or (N, K)
         """
         self.X = X
         self.Y = Y
@@ -218,7 +221,10 @@ class NLLLoss(Loss):
         if not self._is_valid_args(self.X, self.Y):
             raise ValueError("Mismatched sizes for prediction and target")
         if len(self.Y.shape) > 1:
-            self.Y = np.argmax(self.Y, axis=1)
+            if self.Y.shape[1] == 1:
+                self.Y = self.Y.ravel()
+            else:
+                self.Y = np.argmax(self.Y, axis=1)
         # add eps for numerical stability in log computation
         self.X += self.eps
         self.tp_sum = self.X[list(range(self.N)), self.Y].reshape(self.N, 1)
