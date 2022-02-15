@@ -110,3 +110,39 @@ class BCEWithLogitsLoss(BCELoss):
         Backpropagate through the binary cross entropy and logit functions.
         """
         return (self.prediction - self.target) / self.N
+
+
+class CrossEntropyLoss(Loss):
+    def __init__(self):
+        super().__init__()
+        self.eps = 1e-8
+
+    def _softmax(self):
+        # score - max(score) for each example, to prevent overflow
+        self.X = self.X - np.max(self.X, axis=1, keepdims=True)
+        # clip to prevent underflow
+        self.X = self.X.clip(-700)
+        exp_X = np.exp(self.X)
+        exp_sum_X = np.sum(exp_X, axis=1, keepdims=True)
+        return exp_X / exp_sum_X
+
+    def forward(self, X, Y):
+        self.prediction = X
+        self.target = Y
+        self.X = X
+        self.Y = Y
+        self.N = len(self.X)
+        if not self._is_valid_args():
+            raise ValueError("Mismatched sizes for prediction and target")
+        # calculate class probabilities for every example
+        self.probs = self._softmax()
+        # calculate loss
+        true_probs = self.probs[list(range(self.N)), self.Y]
+        loss = -np.sum(np.log(true_probs)) / self.N
+        return loss
+
+    def backward(self):
+        mask = np.zeros_like(self.X)
+        mask[list(range(self.N)), self.Y] = 1
+        return (self.probs - mask) * (1 / self.N)
+
