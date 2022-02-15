@@ -13,10 +13,10 @@ class Loss:
         self.target = None
         self.eps = 1e-8
 
-    def _is_valid_args(self):
-        pred_len = len(self.prediction)
-        targ_len = len(self.target)
-        return pred_len == targ_len
+    def _is_valid_args(self, arg1, arg2):
+        len1 = len(arg1)
+        len2 = len(arg2)
+        return len1 == len2
 
     def __call__(self, prediction, target):
         return self.forward(prediction, target)
@@ -41,7 +41,7 @@ class MSELoss(Loss):
         self.N = len(prediction)
         self.prediction = prediction
         self.target = target
-        if not self._is_valid_args():
+        if not self._is_valid_args(self.prediction, self.target):
             raise ValueError("Mismatched sizes for prediction and target")
         if len(self.target.shape) == 1:
             self.target = self.target.reshape(-1, 1)
@@ -88,7 +88,7 @@ class BCELoss(Loss):
         self.N = len(prediction)
         self.prediction = prediction
         self.target = target
-        if not self._is_valid_args():
+        if not self._is_valid_args(self.prediction, self.target):
             raise ValueError("Mismatched sizes for prediction and target")
         if len(self.target.shape) == 1:
             self.target = self.target.reshape(-1, 1)
@@ -118,7 +118,7 @@ class BCEWithLogitsLoss(BCELoss):
         self.target = target
         self.prediction = sigmoid(self.X)
         self.N = len(self.prediction)
-        if not self._is_valid_args():
+        if not self._is_valid_args(self.prediction, self.target):
             raise ValueError("Mismatched sizes for prediction and target")
         if len(self.target.shape) == 1:
             self.target = self.target.reshape(-1, 1)
@@ -162,13 +162,10 @@ class CrossEntropyLoss(Loss):
                 K is the number of classes.
             Y: matrix of target labels of shape (N) or (N, K).
         """
-        # next two lines used for validating args. remove.
-        self.prediction = X
-        self.target = Y
         self.X = X
         self.Y = Y
         self.N = len(self.X)
-        if not self._is_valid_args():
+        if not self._is_valid_args(self.X, self.Y):
             raise ValueError("Mismatched sizes for prediction and target")
         if len(self.Y.shape) > 1:
             self.Y = np.argmax(self.Y, axis=1)
@@ -215,13 +212,10 @@ class NLLLoss(Loss):
             X: prediction probability matrix of shape (N, K)
             Y: target label matrix of shape (N) or (N, K)
         """
-        # next two lines used for validating args. remove.
-        self.prediction = X
-        self.target = Y
         self.X = X
         self.Y = Y
         self.N, self.K = self.X.shape
-        if not self._is_valid_args():
+        if not self._is_valid_args(self.X, self.Y):
             raise ValueError("Mismatched sizes for prediction and target")
         if len(self.Y.shape) > 1:
             self.Y = np.argmax(self.Y, axis=1)
@@ -229,7 +223,7 @@ class NLLLoss(Loss):
         self.X += self.eps
         self.tp_sum = self.X[list(range(self.N)), self.Y].reshape(self.N, 1)
         self.ltp_sum = np.log(self.tp_sum)
-        loss = (-np.sum(self.ltp_sum) / self.N)
+        loss = -np.sum(self.ltp_sum) * (1 / self.N)
         return loss
 
     def backward(self):
