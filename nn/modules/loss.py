@@ -113,6 +113,7 @@ class BCEWithLogitsLoss(BCELoss):
 
 
 class CrossEntropyLoss(Loss):
+
     def __init__(self):
         super().__init__()
         self.eps = 1e-8
@@ -127,6 +128,7 @@ class CrossEntropyLoss(Loss):
         return exp_X / exp_sum_X
 
     def forward(self, X, Y):
+        # next two lines used for validating args. remove.
         self.prediction = X
         self.target = Y
         self.X = X
@@ -145,4 +147,42 @@ class CrossEntropyLoss(Loss):
         mask = np.zeros_like(self.X)
         mask[list(range(self.N)), self.Y] = 1
         return (self.probs - mask) * (1 / self.N)
+
+
+class NLLLoss(Loss):
+
+    def __init__(self):
+        super().__init__()
+        self.eps = 1e-8
+
+    def _one_hot_encoded_target(self):
+        mask = np.zeros((self.N, self.K))
+        mask[list(range(self.N)), self.Y] = 1
+        return mask
+
+    def forward(self, X, Y):
+        # next two lines used for validating args. remove.
+        self.prediction = X
+        self.target = Y
+        self.X = X
+        self.Y = Y
+        self.N, self.K = self.X.shape
+        if not self._is_valid_args():
+            raise ValueError("Mismatched sizes for prediction and target")
+        # add eps for numerical stability in log computation
+        self.X += self.eps
+        self.tp_sum = self.X[list(range(self.N)), self.Y].reshape(self.N, 1)
+        self.ltp_sum = np.log(self.tp_sum)
+        loss = (-np.sum(self.ltp_sum) / self.N)
+        return loss
+
+    def backward(self):
+        dltp_sum = -np.ones((self.N, 1))
+        dtp_sum = dltp_sum * (1 / self.tp_sum)
+        ohe_y = self._one_hot_encoded_target()
+        dtp = dtp_sum * ohe_y
+        dprobs = dtp * ohe_y
+        #dtp = dtp_sum * self.Y
+        #dprobs = dtp * self.Y
+        return dprobs / self.N
 

@@ -56,3 +56,57 @@ class Sigmoid(Module):
     def __repr__(self):
         return f"Sigmoid()"
 
+
+class Softmax(Module):
+    """
+    Softmax activation function.
+    """
+
+    def __init__(self):
+        super().__init__()
+
+
+    def _softmax(self):
+        """
+        Implements a numerically stable softmax function.
+        """
+        # subtract max score from other scores for each 
+        # example to prevent overflow
+        self.X -= np.max(self.X, axis=1, keepdims=True)
+        # clip min scores to prevent underflow
+        self.X = self.X.clip(-700)
+        self.exp_x = np.exp(self.X)
+        self.sum_exp_x = np.sum(self.exp_x, axis=1, keepdims=True)
+        return (self.exp_x / self.sum_exp_x)
+
+    def forward(self, X):
+        """
+        Forward pass of the softmax function.
+
+        Args:
+            X: matrix of shape (N, K) where N is the number of training
+                examples and K is the number of classes.
+
+        Returns:
+            probability matrix of same shape as X.
+        """
+        self.X = X
+        self.N, self.K = X.shape
+        self.probs = self._softmax()
+        return self.probs
+
+    def backward(self, dout):
+        """
+        Backprop through the softmax function.
+
+        Args:
+            dout: matrix of gradients from above with same shape as X 
+            supplied during the forward pass.
+        """
+        isum_exp_x = 1 / self.sum_exp_x
+        dexp_x = dout * isum_exp_x
+        disum_exp_x = np.sum(dout * self.exp_x, axis=1, keepdims=True)
+        dsum_exp_x = disum_exp_x * (-1 / self.sum_exp_x ** 2)
+        dexp_x += dsum_exp_x * np.ones((self.N, self.K))
+        dx = dexp_x * self.exp_x
+        return dx
