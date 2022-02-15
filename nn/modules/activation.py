@@ -100,7 +100,7 @@ class Softmax(Module):
         Backprop through the softmax function.
 
         Args:
-            dout: matrix of gradients from above with same shape as X 
+            dout: matrix of gradients from above with same (N, K) shape as X 
             supplied during the forward pass.
         """
         isum_exp_x = 1 / self.sum_exp_x
