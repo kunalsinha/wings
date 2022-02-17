@@ -2,28 +2,25 @@ from .optimizer import Optimizer
 
 class SGD(Optimizer):
     """
-    Stochastic Gradient Descent optimizer implementation.
+    Stochastic Gradient Descent optimizer.
     """
 
-    def __init__(self, params, lr, momentum=0, reg=0):
+    def __init__(self, parameters, lr, momentum=0, reg=0):
         """
-        SGD optimizer with momentum
-
         Args:
-            lr (float): learning rate
-            momentum (float): hyperparameter for SGD with momentum
-            reg (float): regularization hyperparameter
+            parameters: model parameters
+            lr: learning rate
+            momentum: coefficient to compute the running avg of gradient
+            reg: regularization parameter
         """
-        super().__init__(params)
+        super().__init__(parameters)
         self.lr = lr
         self.momentum = momentum
         self.reg = reg
 
     def step(self):
         """
-        Step through each model parameter and update.
-        Weight decay gradient is computed as
-            reg * weight
+        Performs a single optimization step.
         """
         for param in self.parameters:
             grad = param.grad
@@ -37,4 +34,7 @@ class SGD(Optimizer):
                 self._step(param.data, grad)
 
     def _step(self, data, grad):
+        """
+        Updates model parameter.
+        """
         data -= self.lr * grad
