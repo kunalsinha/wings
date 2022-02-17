@@ -1,4 +1,4 @@
-import numpy as np
+import cupy as np
 from .module import Module
 from wings.nn.parameter import Parameter
 

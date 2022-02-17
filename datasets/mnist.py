@@ -1,7 +1,7 @@
 import os
 import glob
 from PIL import Image
-import numpy as np
+import cupy as np
 from wings.utils.data import Dataset
 
 class MNIST(Dataset):

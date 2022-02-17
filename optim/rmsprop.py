@@ -1,4 +1,4 @@
-from numpy import sqrt
+from cupy import sqrt
 from .optimizer import Optimizer
 
 class RMSprop(Optimizer):

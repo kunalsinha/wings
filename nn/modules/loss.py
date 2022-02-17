@@ -1,6 +1,6 @@
 from .module import Module
 from .functional import sigmoid, sigmoid_derivative
-import numpy as np
+import cupy as np
 
 class Loss:
     """

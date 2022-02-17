@@ -1,4 +1,4 @@
-import numpy as np
+import cupy as np
 from wings.utils.data import Dataset
 
 class DataLoader:
@@ -29,7 +29,7 @@ class DataLoader:
         """
         Returns an iterator on the dataset.
         """
-        self.indices = list(range(self.N))
+        self.indices = np.array(list(range(self.N)))
         self.batch_num = 0
         # shuffle the indices before each epoch
         if self.shuffle:
