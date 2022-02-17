@@ -30,7 +30,11 @@ class SGD(Optimizer):
             # calculate grad contribution from weight decay
             if self.reg != 0:
                 grad += self.reg * param.data
-            self._step(param.data, grad)
+            if self.momentum != 0:
+                param.v = self.momentum * param.v + (1 - self.momentum) * grad
+                self._step(param.data, param.v)
+            else:
+                self._step(param.data, grad)
 
     def _step(self, data, grad):
         data -= self.lr * grad
