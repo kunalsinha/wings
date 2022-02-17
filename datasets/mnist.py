@@ -98,7 +98,7 @@ class FashionMNIST(Dataset):
         Loads the images and labels.
         """
         self.data = self._read_data()
-        self.labels = self._read_labels()
+        self.labels = self._read_labels().reshape(-1, 1)
 
     def _read_data(self):
         """
