@@ -9,6 +9,8 @@ class Parameter:
     def __init__(self, data):
         self.data = data
         self.grad = np.zeros_like(self.data)
+        self.v = np.zeros_like(self.data)
+        self.s = np.zeros_like(self.data)
 
     def __repr__(self):
         return str(f"Parameter containing:\n{repr(self.data)}")
