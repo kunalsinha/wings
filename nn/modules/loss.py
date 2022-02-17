@@ -21,6 +21,26 @@ class Loss:
     def __call__(self, prediction, target):
         return self.forward(prediction, target)
 
+class MulticlassLoss(Loss):
+    """
+    Base class for multiclass loss functions.
+    """
+
+    def __init__(self):
+        super().__init__()
+
+    def _setup(self, X, Y):
+        self.X = X
+        self.Y = Y
+        self.N, self.K = self.X.shape
+        if not self._is_valid_args(self.X, self.Y):
+            raise ValueError("Mismatched sizes for prediction and target")
+        if len(self.Y.shape) > 1:
+            if self.Y.shape[1] == 1:
+                self.Y = self.Y.ravel()
+            else:
+                self.Y = np.argmax(self.Y, axis=1)
+
 class MSELoss(Loss):
     """
     Implements a mean squared loss function.
@@ -131,7 +151,7 @@ class BCEWithLogitsLoss(BCELoss):
         return (self.prediction - self.target) / self.N
 
 
-class CrossEntropyLoss(Loss):
+class CrossEntropyLoss(MulticlassLoss):
     """
     Cross entropy loss function for multiclass classification. Takes raw scores
     as input and computes softmax and then the negative log loss.
@@ -162,16 +182,7 @@ class CrossEntropyLoss(Loss):
                 K is the number of classes.
             Y: matrix of target labels of shape (N) or (N, 1) or (N, K).
         """
-        self.X = X
-        self.Y = Y
-        self.N = len(self.X)
-        if not self._is_valid_args(self.X, self.Y):
-            raise ValueError("Mismatched sizes for prediction and target")
-        if len(self.Y.shape) > 1:
-            if self.Y.shape[1] == 1:
-                self.Y = self.Y.ravel()
-            else:
-                self.Y = np.argmax(self.Y, axis=1)
+        self._setup(X, Y)
         # calculate class probabilities for every example
         self.probs = self._softmax()
         # add eps for numerical stability when computing log
@@ -190,10 +201,11 @@ class CrossEntropyLoss(Loss):
         return (self.probs - mask) * (1 / self.N)
 
 
-class NLLLoss(Loss):
+class NLLLoss(MulticlassLoss):
     """
     Negative loss likelihood function for multiclass classification. Takes 
-    softmax output as input and computes the resulting loss.
+    softmax output as input and computes the resulting loss. Builds a 
+    computation graph to perform the forward and backward pass.
     """
 
     def __init__(self):
@@ -215,16 +227,7 @@ class NLLLoss(Loss):
             X: prediction probability matrix of shape (N, K)
             Y: target label matrix of shape (N) or (N, 1) or (N, K)
         """
-        self.X = X
-        self.Y = Y
-        self.N, self.K = self.X.shape
-        if not self._is_valid_args(self.X, self.Y):
-            raise ValueError("Mismatched sizes for prediction and target")
-        if len(self.Y.shape) > 1:
-            if self.Y.shape[1] == 1:
-                self.Y = self.Y.ravel()
-            else:
-                self.Y = np.argmax(self.Y, axis=1)
+        self._setup(X, Y)
         # add eps for numerical stability in log computation
         self.X += self.eps
         self.tp_sum = self.X[list(range(self.N)), self.Y].reshape(self.N, 1)
@@ -234,7 +237,8 @@ class NLLLoss(Loss):
 
     def backward(self):
         """
-        Backprop through negative log loss function.
+        Backprop through negative log loss function. Follows computation
+        graph to calculate gradients.
         """
         dltp_sum = -np.ones((self.N, 1))
         dtp_sum = dltp_sum * (1 / self.tp_sum)
@@ -243,3 +247,35 @@ class NLLLoss(Loss):
         dprobs = dtp * ohe_y
         return dprobs / self.N
 
+class FastNLLLoss(MulticlassLoss):
+    """
+    Faster version of NLLLoss. Computes the quantities mathematically instead
+    of using a computation graph.
+    """
+
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, X, Y):
+        """
+        Computes negative log loss during the forward pass.
+
+        Args:
+            X: prediction probability matrix of shape (N, K)
+            Y: target label matrix of shape (N) or (N, 1) or (N, K)
+        """
+        self._setup(X, Y)
+        self.predicted_probs = self.X[list(range(self.N)), self.Y]
+        # add eps for numerical stability
+        self.predicted_probs += self.eps
+        loss = -np.sum(np.log(self.predicted_probs))
+        return loss / self.N
+
+    def backward(self):
+        """
+        Backprop through negative log loss function. Computes gradients
+        analytically.
+        """
+        grads = np.zeros((self.N, self.K))
+        grads[list(range(self.N)), self.Y] = 1 / self.predicted_probs
+        return grads * (-1 / self.N)

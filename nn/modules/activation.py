@@ -110,3 +110,44 @@ class Softmax(Module):
         dexp_x += dsum_exp_x * np.ones((self.N, self.K))
         dx = dexp_x * self.exp_x
         return dx
+
+class FastSoftmax(Module):
+    """
+    Faster implementation of Softmax activation function.
+    """
+
+    def __init__(self):
+        super().__init__()
+
+    def _softmax(self):
+        """
+        Implements a numerically stable softmax function.
+        """
+        # subtract max score from other scores for each 
+        # example to prevent overflow
+        self.X -= np.max(self.X, axis=1, keepdims=True)
+        # clip min scores to prevent underflow
+        self.X = self.X.clip(-700)
+        exp_x = np.exp(self.X)
+        sum_exp_x = np.sum(exp_x, axis=1, keepdims=True)
+        return (exp_x / sum_exp_x)
+
+    def forward(self, X):
+        """
+        Softmax forward pass.
+        """
+        self.X = X
+        self.N, self.K = self.X.shape
+        self.probs = self._softmax()
+        return self.probs
+
+    def backward(self, dout):
+        """
+        Softmax backprop. Computes gradients analytically.
+        """
+        probs_3d = self.probs.reshape(self.N, 1, self.K)
+        jacobians = np.identity(self.K) - (probs_3d.transpose(0, 2, 1) @ probs_3d)
+        jacobians *= probs_3d
+        dout_3d = dout.reshape(self.N, 1, self.K)
+        grads = dout_3d @ jacobians
+        return grads.reshape(self.N, self.K)
