@@ -27,6 +27,8 @@ class Adam(Optimizer):
         Performs a single optimization step.
         """
         for param in self.parameters:
+            if self.reg != 0:
+                param.grad += self.reg * param.data
             param.v = self.beta1 * param.v + (1 - self.beta1) * param.grad
             param.s = self.beta2 * param.s + (1 - self.beta2) * (param.grad ** 2)
             self._step(param.data, param.v, param.s)

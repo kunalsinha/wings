@@ -25,6 +25,8 @@ class RMSprop(Optimizer):
         Performs a single optimization step.
         """
         for param in self.parameters:
+            if self.reg != 0:
+                param.grad += self.reg * param.data
             param.s = self.beta * param.s + (1 - self.beta) * (param.grad ** 2)
             self._step(param.data, param.grad, param.s)
 

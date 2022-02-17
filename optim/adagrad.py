@@ -23,6 +23,8 @@ class Adagrad(Optimizer):
         Performs a single optimization step.
         """
         for param in self.parameters:
+            if self.reg != 0:
+                param.grad += self.reg * param.data
             param.s += param.grad ** 2
             self._step(param.data, param.grad, param.s)
 

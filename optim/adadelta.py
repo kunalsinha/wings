@@ -1,4 +1,5 @@
 from numpy import sqrt
+from .optimizer import Optimizer
 
 class Adadelta(Optimizer):
     """
@@ -25,6 +26,8 @@ class Adadelta(Optimizer):
         Performs a single optimization step.
         """
         for param in self.parameters:
+            if self.reg != 0:
+                param.grad += self.reg * param.data
             param.s = self.rho * param.s + (1 - self.rho) * (param.grad ** 2)
             delta = ((sqrt(param.v + self.eps) / sqrt(param.s + self.eps)) *
                         param.grad)
