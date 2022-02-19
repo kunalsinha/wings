@@ -145,9 +145,13 @@ class FastSoftmax(Module):
         """
         Softmax backprop. Computes gradients analytically.
         """
-        probs_3d = self.probs.reshape(self.N, 1, self.K)
-        jacobians = np.identity(self.K) - (probs_3d.transpose(0, 2, 1) @ probs_3d)
-        jacobians *= probs_3d
-        dout_3d = dout.reshape(self.N, 1, self.K)
-        grads = dout_3d @ jacobians
-        return grads.reshape(self.N, self.K)
+        p = self.probs
+        # reshaped probs from (N, K) to (N, 1, K)
+        p = p[:, np.newaxis]
+        # subtract probs for each training example from identity
+        q = np.identity(self.K) - p
+        # compute the jacobian
+        jacobians = p.transpose(0, 2, 1) * q
+        # reshaped dout from (N, K) to (N, 1, K)
+        dout_3d = dout[:, np.newaxis]
+        return (dout_3d @ jacobians).reshape(self.N, self.K)
