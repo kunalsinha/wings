@@ -164,7 +164,7 @@ class FastBatchNorm(Module):
         self.beta.grad = np.sum(dout, axis=0)
         # calculate the gradient wrt input
         A = self.N * dout
-        B = np.sum(dout, axis=0)
+        B = self.beta.grad
         C = np.sum(dout * self.x_norm, axis=0) * self.x_norm
         coeff = self.gamma.data / (self.N * self.std)
         dx = coeff * (A - B - C)
