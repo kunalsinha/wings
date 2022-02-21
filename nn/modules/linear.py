@@ -1,14 +1,18 @@
-import cupy as np
 from .module import Module
 from wings.nn.parameter import Parameter
+try:
+    import cupy as np
+except Exception:
+    import numpy as np
+
 
 class Linear(Module):
     """
     Implement a linear fully connected layer.
     """
-    
-    def __init__(self, in_features, out_features, 
-            init_strategy='he', scale=None) -> None:
+
+    def __init__(self, in_features, out_features,
+                 init_strategy='he', scale=None) -> None:
         """
         Initialize a fully connected linear layer.
 
@@ -21,11 +25,11 @@ class Linear(Module):
                                  'scale' -> variance with random initialization
         """
 
-
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
-        self.weight = Parameter(np.random.randn(self.in_features, self.out_features))
+        self.weight = Parameter(np.random.randn(
+            self.in_features, self.out_features))
         # bias initialized to zeros by default
         self.bias = Parameter(np.zeros(self.out_features))
 
@@ -64,6 +68,3 @@ class Linear(Module):
         self.bias.grad = np.sum(dout, axis=0)
         self.weight.grad = self.X.T @ dout
         return dout @ self.weight.data.T
-
-
-

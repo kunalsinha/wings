@@ -1,5 +1,8 @@
 from .module import Module
-import cupy as np
+try:
+    import cupy as np
+except Exception:
+    import numpy as np
 
 
 class Dropout(Module):

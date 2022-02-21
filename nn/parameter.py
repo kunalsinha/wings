@@ -1,4 +1,8 @@
-import cupy as np
+try:
+    import cupy as np
+except Exception:
+    import numpy as np
+
 
 class Parameter:
     """
@@ -20,4 +24,3 @@ class Parameter:
         Reset the gradient to zero.
         """
         self.grad.fill(0)
-

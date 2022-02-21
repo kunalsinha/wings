@@ -1,5 +1,9 @@
-from cupy import sqrt
 from .optimizer import Optimizer
+try:
+    from cupy import sqrt
+except Exception:
+    from numpy import sqrt
+
 
 class RMSprop(Optimizer):
     """
@@ -37,5 +41,3 @@ class RMSprop(Optimizer):
         # add eps to prevent divide by zero error
         s += self.eps
         data -= (self.lr * grad) / sqrt(s)
-            
-

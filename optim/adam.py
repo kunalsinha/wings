@@ -1,5 +1,9 @@
-from cupy import sqrt
 from .optimizer import Optimizer
+try:
+    from cupy import sqrt
+except Exception:
+    from numpy import sqrt
+
 
 class Adam(Optimizer):
     """
@@ -30,7 +34,8 @@ class Adam(Optimizer):
             if self.reg != 0:
                 param.grad += self.reg * param.data
             param.v = self.beta1 * param.v + (1 - self.beta1) * param.grad
-            param.s = self.beta2 * param.s + (1 - self.beta2) * (param.grad ** 2)
+            param.s = (self.beta2 * param.s +
+                       (1 - self.beta2) * (param.grad ** 2))
             self._step(param.data, param.v, param.s)
 
     def _step(self, data, v, s):
@@ -40,6 +45,3 @@ class Adam(Optimizer):
         # add eps to prevent divide by zero error
         s += self.eps
         data -= (self.lr * v) / sqrt(s)
-            
-
-

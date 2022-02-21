@@ -1,6 +1,10 @@
 from .module import Module
 from .functional import sigmoid, sigmoid_derivative
-import cupy as np
+try:
+    import cupy as np
+except Exception:
+    import numpy as np
+
 
 class Loss:
     """
@@ -21,6 +25,7 @@ class Loss:
     def __call__(self, prediction, target):
         return self.forward(prediction, target)
 
+
 class MulticlassLoss(Loss):
     """
     Base class for multiclass loss functions.
@@ -40,6 +45,7 @@ class MulticlassLoss(Loss):
                 self.Y = self.Y.ravel()
             else:
                 self.Y = np.argmax(self.Y, axis=1)
+
 
 class MSELoss(Loss):
     """
@@ -73,6 +79,7 @@ class MSELoss(Loss):
         """
         return (self.prediction - self.target) / self.N
 
+
 class BCELoss(Loss):
     """
     Implements a binary cross entropy loss function.
@@ -86,13 +93,13 @@ class BCELoss(Loss):
         Numerically stable binary cross entropy loss computation.
         """
         return np.sum(-(self.target * np.log(self.prediction + self.eps) +
-            (1 - self.target) * np.log(1 - self.prediction + self.eps)))
+                        (1 - self.target) * np.log(1 - self.prediction + self.eps)))
 
     def _bce_backprop(self):
         """
         Gradient computation in backprop of binary cross entropy loss function.
         """
-        return (((1 - self.target) / (1 - self.prediction + self.eps)) - \
+        return (((1 - self.target) / (1 - self.prediction + self.eps)) -
                 (self.target / self.prediction + self.eps))
 
     def forward(self, prediction, target):
@@ -116,6 +123,7 @@ class BCELoss(Loss):
 
     def backward(self):
         return self._bce_backprop() / self.N
+
 
 class BCEWithLogitsLoss(BCELoss):
     """
@@ -246,6 +254,7 @@ class NLLLoss(MulticlassLoss):
         dtp = dtp_sum * ohe_y
         dprobs = dtp * ohe_y
         return dprobs / self.N
+
 
 class FastNLLLoss(MulticlassLoss):
     """

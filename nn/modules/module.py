@@ -1,14 +1,15 @@
 import wings
 
+
 class Module:
     """
     Base class for all layers.
     """
 
     def __init__(self) -> None:
-        self._modules = {} # stores all child modules
-        self._parameters = {} # stores self parameters
-        self._mode = "train" # train or eval mode
+        self._modules = {}  # stores all child modules
+        self._parameters = {}  # stores self parameters
+        self._mode = "train"  # train or eval mode
 
     def __setattr__(self, name, value):
         """Add all module attributes to _modules list."""

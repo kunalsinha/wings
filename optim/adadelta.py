@@ -1,5 +1,9 @@
-from cupy import sqrt
 from .optimizer import Optimizer
+try:
+    from cupy import sqrt
+except Exception:
+    from numpy import sqrt
+
 
 class Adadelta(Optimizer):
     """
@@ -30,7 +34,7 @@ class Adadelta(Optimizer):
                 param.grad += self.reg * param.data
             param.s = self.rho * param.s + (1 - self.rho) * (param.grad ** 2)
             delta = ((sqrt(param.v + self.eps) / sqrt(param.s + self.eps)) *
-                        param.grad)
+                     param.grad)
             param.v = self.rho * param.v + (1 - self.rho) * (delta ** 2)
             self._step(param.data, delta)
 
@@ -39,4 +43,3 @@ class Adadelta(Optimizer):
         Updates model parameter.
         """
         data -= self.lr * grad
-

@@ -1,5 +1,9 @@
-import cupy as np
 from wings.utils.data import Dataset
+try:
+    import cupy as np
+except Exception:
+    import numpy as np
+
 
 class DataLoader:
     """
@@ -50,6 +54,5 @@ class DataLoader:
         end = min(end, self.N)
         self.batch_num += 1
         # get the shuffle indices
-        idx = self.indices[start : end]
+        idx = self.indices[start: end]
         return (self.features[idx], self.labels[idx])
-

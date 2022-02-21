@@ -1,4 +1,8 @@
-import cupy as np
+try:
+    import cupy as np
+except Exception:
+    import numpy as np
+
 
 def sigmoid(X):
     """
@@ -15,11 +19,12 @@ def sigmoid(X):
     mask = (X >= 0)
     res = np.empty_like(X)
     # calculate sigmoid for X >= 0
-    res[mask] =  1 / (1 + np.exp(-X[mask]))
+    res[mask] = 1 / (1 + np.exp(-X[mask]))
     # calculate sigmoid for X < 0
     t = np.exp(X[~mask])
     res[~mask] = t / (1 + t)
     return res
+
 
 def sigmoid_derivative(X):
     """
@@ -33,4 +38,3 @@ def sigmoid_derivative(X):
     """
     sig_x = sigmoid(X)
     return sig_x * (1 - sig_x)
-

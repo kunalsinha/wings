@@ -1,4 +1,8 @@
-import cupy as np
+try:
+    import cupy as np
+except Exception:
+    import numpy as np
+
 
 class Optimizer:
     """
@@ -23,5 +27,3 @@ class Optimizer:
         for p in self.parameters:
             sum += (self.reg / 2) * np.sum(p.data ** 2)
         return sum
-    
-

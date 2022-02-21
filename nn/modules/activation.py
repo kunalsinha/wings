@@ -1,6 +1,9 @@
 from .module import Module
 from .functional import sigmoid, sigmoid_derivative
-import cupy as np
+try:
+    import cupy as np
+except Exception:
+    import numpy as np
 
 
 class ReLU(Module):

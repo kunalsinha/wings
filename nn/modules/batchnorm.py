@@ -1,6 +1,9 @@
 from .module import Module
 from wings.nn.parameter import Parameter
-import numpy as np
+try:
+    import cupy as np
+except Exception:
+    import numpy as np
 
 
 class BatchNormCG(Module):

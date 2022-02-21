@@ -1,5 +1,5 @@
 from .module import Module
-import cupy as np
+
 
 class Sequential(Module):
     """
@@ -54,5 +54,3 @@ class Sequential(Module):
 
     def __call__(self, X):
         return self.forward(X)
-
-

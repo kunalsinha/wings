@@ -1,8 +1,12 @@
 import os
 import glob
 from PIL import Image
-import cupy as np
 from wings.utils.data import Dataset
+try:
+    import cupy as np
+except Exception:
+    import numpy as np
+
 
 class MNIST(Dataset):
     """
@@ -72,7 +76,7 @@ class FashionMNIST(Dataset):
         self.root = root
         self.train = train
         self.descriptions = ["T-shirt/top", "Trouser", "Pullover", "Dress",
-                "Coat", "Sandal", "Shirt", "Sneaker", "Bag", "Ankle boot"]
+                             "Coat", "Sandal", "Shirt", "Sneaker", "Bag", "Ankle boot"]
         self.data_file, self.label_file = self._get_files()
         self._load_dataset()
 
@@ -137,4 +141,3 @@ class FashionMNIST(Dataset):
         text += f"Number of images: {self.N}\n"
         text += f"Image shape: {self.rows} x {self.cols}\n"
         return text
-
