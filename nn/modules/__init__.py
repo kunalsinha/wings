@@ -5,4 +5,4 @@ from .loss import MSELoss, BCELoss, BCEWithLogitsLoss, CrossEntropyLoss, \
 from .activation import ReLU, Sigmoid, Softmax, SoftmaxJacobian, SoftmaxCG
 from .sequential import Sequential
 from .dropout import Dropout
-from .batchnorm import BatchNorm, FastBatchNorm
+from .batchnorm import BatchNorm, BatchNormCG

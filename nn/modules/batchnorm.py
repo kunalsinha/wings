@@ -3,9 +3,9 @@ from wings.nn.parameter import Parameter
 import numpy as np
 
 
-class BatchNorm(Module):
+class BatchNormCG(Module):
     """
-    Implements BatchNorm layer.
+    Implements BatchNorm layer. Uses computation graph to compute gradients. 
     """
 
     def __init__(self, num_features, momentum=0.9):
@@ -90,9 +90,9 @@ class BatchNorm(Module):
         return dx
 
 
-class FastBatchNorm(Module):
+class BatchNorm(Module):
     """
-    Implements BatchNorm layer.
+    Implements BatchNorm layer. Computes gradients analytically.
     """
 
     def __init__(self, num_features, momentum=0.9):
