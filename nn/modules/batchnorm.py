@@ -3,19 +3,22 @@ from wings.nn.parameter import Parameter
 import numpy as np
 
 
-class BatchNorm(Module):
+class BatchNormCG(Module):
     """
-    Implements BatchNorm layer.
+    Implements BatchNorm layer. Uses computation graph to compute gradients. 
     """
 
-    def __init__(self, num_features):
+    def __init__(self, num_features, momentum=0.9):
         """
         Args:
-            num_features (int): D from an input of size (N, D)
+            num_features: D from an input of size (N, D)
+            momentum: coefficient used to calculate the running avg of mean
+                and std deviation.
         """
         super().__init__()
         self.num_features = num_features
         self.eps = 1e-8
+        self.momentum = momentum
         # initialize gamma to ones
         self.gamma = Parameter(np.ones(num_features))
         # initialize beta to zeros
@@ -23,6 +26,9 @@ class BatchNorm(Module):
         # append parameters to _parameters
         self._parameters['gamma'] = self.gamma
         self._parameters['beta'] = self.beta
+        # initialize running_mean and running_var
+        self.running_mean = np.zeros(num_features)
+        self.running_var = np.zeros(num_features)
 
     def forward(self, X):
         """
@@ -33,10 +39,19 @@ class BatchNorm(Module):
             raise ValueError(
                 "Mismatch in number of features between X and batchnorm layer")
         self.x = X
-        # calculate the mean of every feature
-        self.mu = np.mean(self.x, axis=0)
-        # calculate the variance of every feature
-        self.var = np.var(self.x, axis=0)
+        if self._mode == "train":
+            # calculate the mean of every feature
+            self.mu = np.mean(self.x, axis=0)
+            # calculate the variance of every feature
+            self.var = np.var(self.x, axis=0)
+            # update the running averages
+            self.running_mean = self.momentum * \
+                self.running_mean + (1 - self.momentum) * self.mu
+            self.running_var = self.momentum * \
+                self.running_var + (1 - self.momentum) * self.var
+        else:
+            self.mu = self.running_mean
+            self.var = self.running_var
         # calculate the std deviation of every feature
         # add eps to prevent divide by zero while calculating (x - mu)/std
         self.std = np.sqrt(self.var + self.eps)
@@ -72,4 +87,85 @@ class BatchNorm(Module):
         dmu = -np.sum(dxmmu, axis=0)
         dx = dxmmu
         dx += dmu * np.ones((self.N, self.D)) * (1 / self.N)
+        return dx
+
+
+class BatchNorm(Module):
+    """
+    Implements BatchNorm layer. Computes gradients analytically.
+    """
+
+    def __init__(self, num_features, momentum=0.9):
+        """
+        Args:
+            num_features: D from an input of size (N, D)
+            momentum: coefficient used to calculate the running avg of mean
+                and std deviation.
+        """
+        super().__init__()
+        self.num_features = num_features
+        self.eps = 1e-8
+        self.momentum = momentum
+        # initialize gamma to ones
+        self.gamma = Parameter(np.ones(num_features))
+        # initialize beta to zeros
+        self.beta = Parameter(np.zeros(num_features))
+        # append parameters to _parameters
+        self._parameters['gamma'] = self.gamma
+        self._parameters['beta'] = self.beta
+        # initialize running_mean and running_var
+        self.running_mean = np.zeros(num_features)
+        self.running_var = np.zeros(num_features)
+
+    def forward(self, X):
+        """
+        Implements forward pass of the BatchNorm layer.
+        """
+        self.N, self.D = X.shape
+        if self.D != self.num_features:
+            raise ValueError(
+                "Mismatch in number of features between X and batchnorm layer")
+        self.x = X
+        if self._mode == "train":
+            # calculate the mean of every feature
+            mu = np.mean(self.x, axis=0)
+            # calculate the variance of every feature
+            var = np.var(self.x, axis=0)
+            # update the running averages
+            self.running_mean = self.momentum * \
+                self.running_mean + (1 - self.momentum) * mu
+            self.running_var = self.momentum * \
+                self.running_var + (1 - self.momentum) * var
+        else:
+            mu = self.running_mean
+            var = self.running_var
+        # calculate the std deviation of every feature
+        # add eps to prevent divide by zero while calculating (x - mu)/std
+        self.std = np.sqrt(var + self.eps)
+        # calculate x-mu
+        xmmu = self.x - mu
+        # calculate x_norm
+        self.x_norm = xmmu / self.std
+        # shift and scale x_norm by gamma and beta
+        out = self.gamma.data * self.x_norm + self.beta.data
+        return out
+
+    def backward(self, dout):
+        """
+        Implements backward pass of the BatchNorm layer. Computes backprop
+        gradients analytically.
+
+        Args:
+            dout: gradient from the upstream.
+        """
+        # calculate the gradient wrt gamma
+        self.gamma.grad = np.sum(dout * self.x_norm, axis=0)
+        # calculate the gradient wrt beta
+        self.beta.grad = np.sum(dout, axis=0)
+        # calculate the gradient wrt input
+        A = self.N * dout
+        B = self.beta.grad
+        C = np.sum(dout * self.x_norm, axis=0) * self.x_norm
+        coeff = self.gamma.data / (self.N * self.std)
+        dx = coeff * (A - B - C)
         return dx
