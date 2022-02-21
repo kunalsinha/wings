@@ -2,6 +2,7 @@ from .module import Module
 from .functional import sigmoid, sigmoid_derivative
 import numpy as np
 
+
 class ReLU(Module):
     """
     Implements a ReLU activation function.
@@ -24,7 +25,7 @@ class ReLU(Module):
         """
         Backprop through ReLU activation.
         """
-        dout[self.X <=0] = 0
+        dout[self.X <= 0] = 0
         return dout
 
     def __repr__(self):
@@ -65,12 +66,11 @@ class Softmax(Module):
     def __init__(self):
         super().__init__()
 
-
     def _softmax(self):
         """
         Implements a numerically stable softmax function.
         """
-        # subtract max score from other scores for each 
+        # subtract max score from other scores for each
         # example to prevent overflow
         self.X -= np.max(self.X, axis=1, keepdims=True)
         # clip min scores to prevent underflow
@@ -111,9 +111,11 @@ class Softmax(Module):
         dx = dexp_x * self.exp_x
         return dx
 
+
 class FastSoftmax(Module):
     """
-    Faster implementation of Softmax activation function.
+    Implements Softmax activation function. Computes jacobians to calculate
+    gradients.
     """
 
     def __init__(self):
@@ -123,7 +125,53 @@ class FastSoftmax(Module):
         """
         Implements a numerically stable softmax function.
         """
-        # subtract max score from other scores for each 
+        # subtract max score from other scores for each
+        # example to prevent overflow
+        self.X -= np.max(self.X, axis=1, keepdims=True)
+        # clip min scores to prevent underflow
+        self.X = self.X.clip(-700)
+        exp_x = np.exp(self.X)
+        sum_exp_x = np.sum(exp_x, axis=1, keepdims=True)
+        return (exp_x / sum_exp_x)
+
+    def forward(self, X):
+        """
+        Softmax forward pass.
+        """
+        self.X = X
+        self.N, self.K = self.X.shape
+        self.probs = self._softmax()
+        return self.probs
+
+    def backward(self, dout):
+        """
+        Softmax backprop. Computes jacobians to calculate gradients.
+        """
+        p = self.probs
+        # reshaped probs from (N, K) to (N, 1, K)
+        p = p[:, np.newaxis]
+        # subtract probs for each training example from identity
+        q = np.identity(self.K) - p
+        # compute the jacobian
+        jacobians = p.transpose(0, 2, 1) * q
+        # reshaped dout from (N, K) to (N, 1, K)
+        dout_3d = dout[:, np.newaxis]
+        return (dout_3d @ jacobians).reshape(self.N, self.K)
+
+
+class FastSoftmaxAlt(Module):
+    """
+    Implements Softmax activation function. Computes gradients analytically.
+    """
+
+    def __init__(self):
+        super().__init__()
+
+    def _softmax(self):
+        """
+        Implements a numerically stable softmax function.
+        """
+        # subtract max score from other scores for each
         # example to prevent overflow
         self.X -= np.max(self.X, axis=1, keepdims=True)
         # clip min scores to prevent underflow
@@ -145,13 +193,6 @@ class FastSoftmax(Module):
         """
         Softmax backprop. Computes gradients analytically.
         """
-        p = self.probs
-        # reshaped probs from (N, K) to (N, 1, K)
-        p = p[:, np.newaxis]
-        # subtract probs for each training example from identity
-        q = np.identity(self.K) - p
-        # compute the jacobian
-        jacobians = p.transpose(0, 2, 1) * q
-        # reshaped dout from (N, K) to (N, 1, K)
-        dout_3d = dout[:, np.newaxis]
-        return (dout_3d @ jacobians).reshape(self.N, self.K)
+        A = np.sum(dout * self.probs, axis=1, keepdims=True)
+        dx = self.probs * (dout - A)
+        return dx
